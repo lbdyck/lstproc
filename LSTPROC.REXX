@@ -1,4 +1,4 @@
-        /* --------------------  rexx procedure  -------------------- */
+        /*%NOCOMMENT -------------  rexx procedure  ----------------- */
          _version_ = "3.1"
         /* Name:      lstproc                                         *
          *                                                            *
