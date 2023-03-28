@@ -1,5 +1,5 @@
         /* --------------------  rexx procedure  -------------------- */
-         _version_ = "3.0"
+         _version_ = "3.1"
         /* Name:      lstproc                                         *
          *                                                            *
          * Function:  Display active JES2 proclibs                    *
@@ -34,6 +34,8 @@
          *                                                            *
          * History:                                                   *
          *                                                            *
+         *          2023-03-28 - Correct symbolic processing          *
+         *                       if symbolic starts with .&           *
          *          2021-09-10 - Updates from Ray Mullins to fix 0C4  *
          *                       when compiled                        *
          *          2014-01-31 - Don't alloc/open/read the iplparm    *
@@ -211,9 +213,8 @@
          /* *LOADDATA* - Important information   *
           *  if you don't have RACF Read for the *
           *  LISTDATA IDCAMS command then set    *
-          *  LOADVOL = ""                        *
-          *  or                                  *
-          *  LOADVOL  = chk_volser(parmaddr)     */
+          *  LOADVOL = ""                        */
+         /*  LOADVOL  = chk_volser(parmaddr)   */
         loadvol  = null
         lparm = ""strip(IPALPDSN)"(load"substr(loadparm,5,2)")"
         lparm = ""_apost_""lparm""_apost_""
@@ -595,7 +596,9 @@
               parse value dsn with _left_ "&" symbol "." _right_
               syssym = mvsvar("symdef",symbol)
               if syssym <> null then do
-                 dsn = _left_"."syssym""_right_
+                 if right(_left_,1) = '.'
+                 then dsn = _left_""syssym""_right_
+                 else dsn = _left_"."syssym""_right_
                  end
               else do
                  if wordpos(symbol,syms) = 0 then leave
