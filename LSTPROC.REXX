@@ -125,6 +125,10 @@
          *                                                            *
          * ---------------------------------------------------------- */
          signal on novalue name sub_novalue
+        /* --------------------------------- *
+         | Change if SDSF REXX not available |
+         * --------------------------------- */
+         SDSF_JES2_PROCS = 'Y'    /* Change to N if no SDSF REXX */
         /* ----------------------------------------------------- *
          * Setup defaults in sub routine                         *
          * ----------------------------------------------------- */
@@ -408,23 +412,30 @@
         * Now get JES2 PROCLIBS using SDSF REXX Interface       *
         * **Comment or delete if you don't have SDSF**          *
         * ----------------------------------------------------- */
-        procddn = "$PROC00"
+        If SDSF_JES2_PROCS = 'Y' then do
         RC = ISFCALLS("ON")
         ADDRESS SDSF "ISFEXEC PROC"
         RC = ISFCALLS("OFF")
         ALLOC_PROCS = ""
-        TMPDD = DDNAME.1
+        PROCDDN = DDNAME.1
         DO J = 1 TO ISFROWS
-          IF (TMPDD = DDNAME.J) THEN
+          IF PROCDDN = DDNAME.J THEN
+          if wordpos("'"dsname.j"'",alloc_procs) = 0 then
           ALLOC_PROCS = ALLOC_PROCS "'"DSNAME.J"'"
           ELSE
           if ispf = 1
-          then "Alloc f("procddn") ds("alloc_procs") shr reuse"
+          then "Alloc f($"procddn") ds("alloc_procs") shr reuse"
           else call echo procddn alloc_procs
-        END
+          IF J = ISFROWS THEN
+             if ispf = 1
+               then "Alloc f($"procddn")",
+               "ds("alloc_procs") shr reuse"
+               else call echo procddn alloc_procs
+           END J
         DROP ISFROWS.
         if ispf = 1 & ALLOC_PROCS <> ""
         then "Alloc f("procddn") ds("alloc_procs") shr reuse"
+        END /* IF */
 
         /* ----------------------------------------------------- *
          * Now look thru Master JCL Proclibs for JES2 Proc       *
