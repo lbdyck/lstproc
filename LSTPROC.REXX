@@ -28,6 +28,8 @@
          *               If not find *LISTDATA* and make the          *
          *               noted changes.  You will then be limited     *
          *               to the cataloged iplparm dataset.            *
+         *           12. SDSF REXX is used to capture JES2 defined    *
+         *               Proclibs.                                    *
          *                                                            *
          * Author:    Lionel B. Dyck                                  *
          *            Internet: lbdyck@gmail.com                      *
@@ -36,6 +38,7 @@
          *                                                            *
          *          2023-03-29 - Add dataset in IEFJOBS from MSTRJCL  *
          *                       and allocated to $PROCJOB            *
+         *                     - Dynamically get JES2 Defined Procs   *
          *          2023-03-28 - Correct symbolic processing          *
          *                       if symbolic starts with .&           *
          *          2021-09-10 - Updates from Ray Mullins to fix 0C4  *
@@ -400,6 +403,28 @@
            then "Alloc f("procddn") ds("alloc_procs") shr reuse"
            else call echo procddn alloc_procs
         end
+
+        /* ---------------------------------------------------- *
+        * Now get JES2 PROCLIBS using SDSF REXX Interface       *
+        * **Comment or delete if you don't have SDSF**          *
+        * ----------------------------------------------------- */
+        procddn = "$PROC00"
+        RC = ISFCALLS("ON")
+        ADDRESS SDSF "ISFEXEC PROC"
+        RC = ISFCALLS("OFF")
+        ALLOC_PROCS = ""
+        TMPDD = DDNAME.1
+        DO J = 1 TO ISFROWS
+          IF (TMPDD = DDNAME.J) THEN
+          ALLOC_PROCS = ALLOC_PROCS "'"DSNAME.J"'"
+          ELSE
+          if ispf = 1
+          then "Alloc f("procddn") ds("alloc_procs") shr reuse"
+          else call echo procddn alloc_procs
+        END
+        DROP ISFROWS.
+        if ispf = 1 & ALLOC_PROCS <> ""
+        then "Alloc f("procddn") ds("alloc_procs") shr reuse"
 
         /* ----------------------------------------------------- *
          * Now look thru Master JCL Proclibs for JES2 Proc       *
