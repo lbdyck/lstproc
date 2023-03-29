@@ -1,5 +1,5 @@
         /*%NOCOMMENT -------------  rexx procedure  ----------------- */
-         _version_ = "3.1"
+         _version_ = "3.2"
         /* Name:      lstproc                                         *
          *                                                            *
          * Function:  Display active JES2 proclibs                    *
@@ -34,6 +34,8 @@
          *                                                            *
          * History:                                                   *
          *                                                            *
+         *          2023-03-29 - Add dataset in IEFJOBS from MSTRJCL  *
+         *                       and allocated to $PROCJOB            *
          *          2023-03-28 - Correct symbolic processing          *
          *                       if symbolic starts with .&           *
          *          2021-09-10 - Updates from Ray Mullins to fix 0C4  *
@@ -310,6 +312,7 @@
          * Updates by ian.ramage@rs-components.com               *
          * ----------------------------------------------------- */
         hit = 0
+        mstdd = null
         do i = 1 to in.0
           in.i  = TRANSLATE(in.i," ",",")
            if hit = 1 then do
@@ -317,12 +320,23 @@
               if substr(in.i,3,1) = " "
                  then do
                       parse value in.i with . "DSN=" dsn " " .
-                      proclibs = proclibs dsn
+                      if mstdd /= 'IEFJOBS'
+                        then proclibs = proclibs dsn
+                        else procjobs = procjobs dsn
                       end
                  else hit = 0
               end
+           if left(in.i,9) = "//IEFJOBS" then do        /* @BK */
+              mstdd = 'IEFJOBS'                         /* @LD */
+              hit = 1                                   /* @BK */
+              parse value in.i with . "DSN=" dsn " " .  /* @BK */
+              dsn = word(strip(dsn),1)                  /* @BK */
+              if pos("&",dsn) > 0 then call fix_sym     /* @BK */
+              procjobs = procjobs dsn                   /* @LD */
+              end                                       /* @BK */
            if left(in.i,9) = "//IEFPDSI" then do
               hit = 1
+              mstdd = null
               parse value in.i with . "DSN=" dsn " " .
               dsn = word(strip(dsn),1)                  /* @pn */
               if pos("&",dsn) > 0 then call fix_sym     /* @pn */
@@ -363,6 +377,29 @@
            if allocdd <> null &,
               allocdd = retstr then signal Finish
            end
+
+        /* ----------------------------------------------------- *
+         * Alloc all Master JCL IEFJOBS datasets to $PROCJOB     *
+         * ----------------------------------------------------- */
+        alloc_procs = null
+        if procjobs /= null then do
+        do i = 1 to words(procjobs)
+           proc  = ""_apost_""word(procjobs,i)""_apost_""
+           alloc_procs = alloc_procs proc
+           end
+        if pos("&",alloc_procs) > 0 then do
+           symtext = alloc_procs
+           call fix_sym1
+           alloc_procs = symtext
+           end
+        procddn = "$PROCJOB"
+        _junk_ = msg("OFF")
+        "Free  f("procddn")"
+        _junk_ = msg("ON")
+        if ispf = 1
+           then "Alloc f("procddn") ds("alloc_procs") shr reuse"
+           else call echo procddn alloc_procs
+        end
 
         /* ----------------------------------------------------- *
          * Now look thru Master JCL Proclibs for JES2 Proc       *
@@ -807,7 +844,7 @@
    msgid = left(myname": ",10)
 
          parse value "" with null ddn test mstrjcl proclibs,
-                             proc syms procs parmlibs,
+                             proc syms procs parmlibs procjobs ,
                              opt1 opt2 opt3 opt4 lstprocm
          _apost_ = "'"
          parse source xenv xtype xmyname xddname xdsname .
