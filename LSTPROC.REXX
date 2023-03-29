@@ -412,31 +412,41 @@
         * Now get JES2 PROCLIBS using SDSF REXX Interface       *
         * **Comment or delete if you don't have SDSF**          *
         * ----------------------------------------------------- */
-        If SDSF_JES2_PROCS = 'Y' then do
-        RC = ISFCALLS("ON")
-        ADDRESS SDSF "ISFEXEC PROC"
-        RC = ISFCALLS("OFF")
-        ALLOC_PROCS = ""
-        PROCDDN = DDNAME.1
-        DO J = 1 TO ISFROWS
-          IF PROCDDN = DDNAME.J THEN
-          if wordpos("'"dsname.j"'",alloc_procs) = 0 then
-          ALLOC_PROCS = ALLOC_PROCS "'"DSNAME.J"'"
-          ELSE
-          if ispf = 1
-          then "Alloc f($"procddn") ds("alloc_procs") shr reuse"
-          else call echo procddn alloc_procs
-          IF J = ISFROWS THEN
-             if ispf = 1
-               then "Alloc f($"procddn")",
-               "ds("alloc_procs") shr reuse"
-               else call echo procddn alloc_procs
-               alloc_procs = null
-           END J
-        DROP ISFROWS.
-        if ispf = 1 & ALLOC_PROCS <> ""
-        then "Alloc f("procddn") ds("alloc_procs") shr reuse"
-        END /* IF */
+        IF (SDSF_JES2_PROCS = "Y") THEN DO                    /* @A1 */
+           RC = ISFCALLS("ON")                                /* @A1 */
+           ADDRESS SDSF "ISFEXEC PROC"                        /* @A1 */
+           RC = ISFCALLS("OFF")                               /* @A1 */
+           ALLOC_PROCS = ""                                   /* @A1 */
+           K = 1                                              /* @A1 */
+           TMPDD = DDNAME.1                                   /* @A1 */
+           SDSFPROC.1 = TMPDD                                 /* @A1 */
+           DO J = 1 TO ISFROWS                                /* @A1 */
+              IF (TMPDD = DDNAME.J) THEN                      /* @A1 */
+                 ALLOC_PROCS = ALLOC_PROCS "'"DSNAME.J"'"     /* @A1 */
+              ELSE DO                                         /* @A1 */
+                 if ispf = 1                                  /* @A1 */
+                    then "Alloc f($"TMPDD")",                 /* @A1 */
+                         "ds("alloc_procs") shr reuse"        /* @A1 */
+                    else call echo TMPDD alloc_procs          /* @A1 */
+                 ALLOC_PROCS = ""                             /* @A1 */
+                 TMPDD = DDNAME.J                             /* @A1 */
+                 K = K + 1                                    /* @A1 */
+                 SDSFPROC.K = '$'TMPDD                        /* @A1 */
+              END /* ELSE */                                  /* @A1 */
+              IF (J = ISFROWS) THEN DO                        /* @A1 */
+                 if ispf = 1                                  /* @A1 */
+                    then "Alloc f($"TMPDD")",                 /* @A1 */
+                         "ds("alloc_procs") shr reuse"        /* @A1 */
+                    else call echo TMPDD alloc_procs          /* @A1 */
+                 K = K + 1                                    /* @A1 */
+                 SDSFPROC.K = '$'TMPDD                        /* @A1 */
+                 ALLOC_PROCS = ""                             /* @A1 */
+                 TMPDD = ""                                   /* @A1 */
+              END /* IF J */                                  /* @A1 */
+           END J                                              /* @A1 */
+           DROP ISFROWS.                                      /* @A1 */
+           SDSFPROC.0 = K                                     /* @A1 */
+        END /* IF */                                          /* @A1 */
 
         /* ----------------------------------------------------- *
          * Now look thru Master JCL Proclibs for JES2 Proc       *
@@ -640,7 +650,10 @@
               if ispf = 0 then exit 0
               _junk_ = msg("OFF")
               Address TSO
-              "Free f($PROCMST)"
+              "Free f($PROCMST $PROCJOB)"                     /* @A1 */
+              DO J = 1 TO SDSFPROC.0                          /* @A1 */
+                 "FREE FI("SDSFPROC.J")"                      /* @A1 */
+              END J                                           /* @A1 */
               do i = 1 to words(procs)
                  "Free f($PROC"word(procs,i)
               end
@@ -652,7 +665,7 @@
               then retstr = 0 ;
               else do ;
                       _junk_ = msg("OFF")
-                      "Free  f($PROCMST)"
+                      "Free  f($PROCMST $PROCJOB)"
                       _junk_ = msg("ON")
                       if retstr = null then do
                          retstr = 16
