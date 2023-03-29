@@ -431,6 +431,7 @@
                then "Alloc f($"procddn")",
                "ds("alloc_procs") shr reuse"
                else call echo procddn alloc_procs
+               alloc_procs = null
            END J
         DROP ISFROWS.
         if ispf = 1 & ALLOC_PROCS <> ""
