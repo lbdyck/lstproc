@@ -421,8 +421,11 @@
            TMPDD = DDNAME.1                                   /* @A1 */
            SDSFPROC.1 = TMPDD                                 /* @A1 */
            DO J = 1 TO ISFROWS                                /* @A1 */
-              IF (TMPDD = DDNAME.J) THEN                      /* @A1 */
+              IF (TMPDD = DDNAME.J) THEN Do                   /* @LD */
+                 if wordpos("'"dsname.j"'",alloc_procs) = 0   /* @LD */
+                 Then                                         /* @LD */
                  ALLOC_PROCS = ALLOC_PROCS "'"DSNAME.J"'"     /* @A1 */
+                 End                                          /* @LD */
               ELSE DO                                         /* @A1 */
                  if ispf = 1                                  /* @A1 */
                     then "Alloc f($"TMPDD")",                 /* @A1 */
