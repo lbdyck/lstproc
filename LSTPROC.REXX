@@ -1,5 +1,5 @@
         /*%NOCOMMENT -------------  rexx procedure  ----------------- */
-         _version_ = "3.2"
+         _version_ = "3.3"
         /* Name:      lstproc                                         *
          *                                                            *
          * Function:  Display active JES2 proclibs                    *
