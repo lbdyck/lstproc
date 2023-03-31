@@ -36,6 +36,7 @@
          *                                                            *
          * History:                                                   *
          *                                                            *
+         *          2023-03-31 - Correct symbolic replacement         *
          *          2023-03-29 - Add dataset in IEFJOBS from MSTRJCL  *
          *                       and allocated to $PROCJOB            *
          *                     - Dynamically get JES2 Defined Procs   *
@@ -749,7 +750,9 @@
                        if syssym = null then ,
                           syssym = mvsvar("symdef",fixsymb)
                        if syssym <> null then do
-                          symtext = _left_"."syssym""_right_
+                          if left(syssym,1) = '.'
+                          then symtext = _left_""syssym""_right_
+                          else symtext = _left_"."syssym""_right_
                           end
                        end
                     end
