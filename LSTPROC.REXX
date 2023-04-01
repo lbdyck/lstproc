@@ -750,7 +750,7 @@
                        if syssym = null then ,
                           syssym = mvsvar("symdef",fixsymb)
                        if syssym <> null then do
-                          if left(syssym,1) = '.'
+                          if right(_left_,1) = '.'
                           then symtext = _left_""syssym""_right_
                           else symtext = _left_"."syssym""_right_
                           end
