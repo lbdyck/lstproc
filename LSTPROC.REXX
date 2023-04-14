@@ -1,5 +1,5 @@
         /*%NOCOMMENT -------------  rexx procedure  ----------------- */
-         _version_ = "3.3"
+         _version_ = "3.4"
         /* Name:      lstproc                                         *
          *                                                            *
          * Function:  Display active JES2 proclibs                    *
@@ -8,6 +8,17 @@
          *                                                            *
          *            Where proc is the name of the JES2 proc or      *
          *            blank to default to JES2.                       *
+         *                                                            *
+         * Usage:     Under ISPF display the ISRDDN display filtered  *
+         *            with the PROC DDnames ($PROC)                   *
+         *                                                            *
+         *            Outside of ISPF use the echo TSO command to     *
+         *            display the info (echo is trappable while say   *
+         *            is not).  ECHO can be found in File312 on the   *
+         *            CBTTape site as EKKO.                           *
+         *                                                            *
+         *            If invoked as a function (e.g. x=lstproc)       *
+         *            then act as if under native TSO and not ISPF.   *
          *                                                            *
          * Assumptions and Caveats:                                   *
          *            1. if proc not specified then use JES2          *
@@ -36,6 +47,8 @@
          *                                                            *
          * History:                                                   *
          *                                                            *
+         *          2023-04-10 - Check for invocation as Function     *
+         *                       and set mode as non-ISPF             *
          *          2023-03-31 - Correct symbolic replacement         *
          *          2023-03-29 - Add dataset in IEFJOBS from MSTRJCL  *
          *                       and allocated to $PROCJOB            *
@@ -184,12 +197,19 @@
          * set flag to only echo Parmlib *
          * info to the "screen".         *
          * ----------------------------- */
+         parse source x1 env .
+         if env /= 'FUNCTION' then do
          sysispf = sysvar("sysispf")
          if sysispf = "ACTIVE" then ispf = 1
                                else do
                                     ispf = 0
                                     isfunc = "F"
                                     end
+         end
+         else do
+              ispf = 0
+              isfunc = 'F'
+              end
         /* ----------------------------------------------------- *
          * Code from Todd Burrell to get mstjcl info             *
          * Enhanced by Ian Ramage                                *
